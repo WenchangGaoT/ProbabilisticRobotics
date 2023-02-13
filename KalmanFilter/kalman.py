@@ -6,7 +6,7 @@ class KalmanFilter:
     Kalman Filter algorithm
     '''
 
-    def __init__(self, A, B, R, C, Q):
+    def __init__(self, A, B, R, C=np.zeros((1,2)), Q=np.zeros((2,2))):
         assert isinstance(A, np.ndarray)
         assert isinstance(B, np.ndarray)
         assert isinstance(R, np.ndarray)
@@ -19,7 +19,7 @@ class KalmanFilter:
         self.C = C
         self.Q = Q
 
-    def predict(self, μ, Σ, u):
+    def predict(self, μ, Σ, u=np.zeros((2,1))):
         assert self.A.shape[1] == μ.shape[0]
         assert self.B.shape[1] == u.shape[0]
         μ_hat = np.dot(self.A, μ)
