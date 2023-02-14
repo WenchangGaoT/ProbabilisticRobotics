@@ -61,8 +61,9 @@ def plot_histogram(fname, μ, N):
     print(μ.shape)
     μ = np.reshape(μ, (N,))
 
-    plt.set_xlabel('absolute value of error')
-    plt.set_ylabel('')
+    # plt.set_xlabel('absolute value of error')
+    # plt.set_ylabel('')
 
     plt.hist(μ, 100)
+    plt.savefig(fname)
     plt.show()
