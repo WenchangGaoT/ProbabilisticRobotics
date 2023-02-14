@@ -35,7 +35,7 @@ class KalmanFilter:
         assert isinstance(x, np.ndarray)
         assert self.C.shape[1] == x.shape[0]
 
-        z = np.dot(self.C, x)+np.random.multivariate_normal(mean=np.zeros((self.C.shape[0], 1)), cov=self.Q)
+        z = np.dot(self.C, x)+np.random.multivariate_normal(mean=np.zeros((self.C.shape[0])), cov=self.Q)
         return z
 
     def measure(self, μ_hat, Σ_hat, z):

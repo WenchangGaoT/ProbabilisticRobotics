@@ -53,3 +53,16 @@ def plot_uncertainty_ellipse(μ_list, Σ_list, N=100):
     ax.legend()
     plt.savefig('./drone1dplots/uncertainty_ellipses.jpg')
     plt.show()
+
+
+def plot_histogram(fname, μ, N):
+    if not os.path.exists('./drone1dplots'): os.mkdir('./drone1dplots')
+
+    print(μ.shape)
+    μ = np.reshape(μ, (N,))
+
+    plt.set_xlabel('absolute value of error')
+    plt.set_ylabel('')
+
+    plt.hist(μ, 100)
+    plt.show()

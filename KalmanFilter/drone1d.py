@@ -1,6 +1,19 @@
 import numpy as np
 from kalman import KalmanFilter
-from plot import plot_uncertainty_ellipse
+from plot import plot_uncertainty_ellipse, plot_histogram
+
+
+def sample_with_failure(kf, p=0):
+    μ = np.zeros((2,1), dtype=np.float32)
+    Σ = np.zeros((2,2), dtype=np.float32)
+
+    for t in range(1, 21):
+        μ, Σ = kf.predict(μ, Σ)
+        z = kf.sense(μ)
+        if np.random.rand() > p: 
+            μ, Σ = kf.measure(μ, Σ, z)
+    
+    return μ[0]
 
 
 if __name__ == '__main__':
@@ -33,7 +46,6 @@ if __name__ == '__main__':
         μ_list.append(μ)
         Σ_list.append(Σ)
     # Plot the uncertainty ellipse 
-    # TODO
     plot_uncertainty_ellipse(μ_list, Σ_list)
 
     print('-----------------')
@@ -54,15 +66,35 @@ if __name__ == '__main__':
     # print(f'Kalman gain is:{K}')
 
     # Q2.3
-    print('Q2.3:')
-    p_list = [0.1, 0.5, 0.9]
-    N = 10000
-    for p in p_list:
-        pass
+    # print('Q2.3:')
+    # p_list = [0, 0.1, 0.5, 0.9]
+    # N = 1000
+    # for p in p_list:
+    #     samples = []
+    #     for n in range(N):
+    #         samples.append(sample_with_failure(kf, p))
+    #     samples = np.array(samples)
+    #     print(np.mean(samples))
+    #     samples = np.abs(samples)
+    #     plot_histogram('./drone1dplots/p_failure=%f'%p, samples, N)
 
 
     print('-----------')
     print()
+
+
     # Question 3: Movement
     print('Question 3: Movement')
+
+
+    B = np.array([[0.5], [1]])
+    μ = np.array([[5.], [1.]])
+    Σ = np.zeros((2, 2))
+    u = np.array([[1.]])
+
+    kf = KalmanFilter(A, B, R, C, Q)
+    μ_hat, Σ_hat =  kf.predict(μ, Σ, u)
+    print(f'Expected mean: {μ_hat}')
+    print(f'Estimated covariance matrix: {Σ_hat}')
+
 
