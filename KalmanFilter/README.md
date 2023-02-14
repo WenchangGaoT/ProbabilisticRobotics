@@ -3,6 +3,7 @@
 ## Relevant files
 
 kalman.py implements the general Kalman Filter algorithm.
+plot.py implements the functions for plotting in the whole project.
 drone1d.py contains the code for the 1-D problem solving Question 1, 2, 3.
 drone2d.py contains the code for the 2-D problem solving Question 4.
 Please make sure these files that are under the same directory.
