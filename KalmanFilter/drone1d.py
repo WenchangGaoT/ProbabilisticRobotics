@@ -12,12 +12,12 @@ def sample_with_failure(kf, p=0):
     for t in range(1, 21):
         μ, Σ = kf.predict(μ, Σ)
         # z = kf.sense(μ)
-        x += np.ones((2,1), dtype=np.float32)*np.random.normal(0, 1)
+        x += np.array([[0.5], [1]], dtype=np.float32)*np.random.normal(0, 1)
         if np.random.rand() > p: 
             z = kf.sense(x)
             μ, Σ = kf.measure(μ, Σ, z)
     
-    return abs(z-x[0])
+    return x[0]-μ[0]
 
 
 if __name__ == '__main__':
@@ -71,15 +71,15 @@ if __name__ == '__main__':
 
     # Q2.3
     print('Q2.3:')
-    p_list = [0, 0.1, 0.5, 0.9]
-    N = 1000
+    p_list = [0.1, 0.5, 0.9]
+    N = 10000
     for p in p_list:
         samples = []
         for n in range(N):
             samples.append(sample_with_failure(kf, p))
         samples = np.array(samples)
         print(np.mean(samples))
-        samples = np.abs(samples)
+        # samples = np.abs(samples)
         plot_histogram('./drone1dplots/p_failure=%f.jpg'%p, samples, N)
 
 
