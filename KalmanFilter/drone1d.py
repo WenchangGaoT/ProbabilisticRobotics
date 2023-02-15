@@ -6,14 +6,18 @@ from plot import plot_uncertainty_ellipse, plot_histogram
 def sample_with_failure(kf, p=0):
     μ = np.zeros((2,1), dtype=np.float32)
     Σ = np.zeros((2,2), dtype=np.float32)
+    z = kf.sense(μ)
+    x = np.zeros((2,1), dtype=np.float32)
 
     for t in range(1, 21):
         μ, Σ = kf.predict(μ, Σ)
-        z = kf.sense(μ)
+        # z = kf.sense(μ)
+        x += np.array([[0.5], [1]], dtype=np.float32)*np.random.normal(0, 1)
         if np.random.rand() > p: 
+            z = kf.sense(x)
             μ, Σ = kf.measure(μ, Σ, z)
     
-    return μ[0]
+    return x[0]-μ[0]
 
 
 if __name__ == '__main__':
@@ -66,17 +70,17 @@ if __name__ == '__main__':
     # print(f'Kalman gain is:{K}')
 
     # Q2.3
-    # print('Q2.3:')
-    # p_list = [0, 0.1, 0.5, 0.9]
-    # N = 1000
-    # for p in p_list:
-    #     samples = []
-    #     for n in range(N):
-    #         samples.append(sample_with_failure(kf, p))
-    #     samples = np.array(samples)
-    #     print(np.mean(samples))
-    #     samples = np.abs(samples)
-    #     plot_histogram('./drone1dplots/p_failure=%f'%p, samples, N)
+    print('Q2.3:')
+    p_list = [0.1, 0.5, 0.9]
+    N = 10000
+    for p in p_list:
+        samples = []
+        for n in range(N):
+            samples.append(sample_with_failure(kf, p))
+        samples = np.array(samples)
+        print(np.mean(samples))
+        # samples = np.abs(samples)
+        plot_histogram('./drone1dplots/p_failure=%f.jpg'%p, samples, N)
 
 
     print('-----------')

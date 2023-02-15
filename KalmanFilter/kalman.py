@@ -34,8 +34,7 @@ class KalmanFilter:
     def sense(self, x):
         assert isinstance(x, np.ndarray)
         assert self.C.shape[1] == x.shape[0]
-
-        z = np.dot(self.C, x)+np.random.multivariate_normal(mean=np.zeros((self.C.shape[0])), cov=self.Q)
+        z = np.dot(self.C, x)+np.reshape(np.random.multivariate_normal(mean=np.zeros((self.C.shape[0])), cov=self.Q), (-1,1))
         return z
 
     def measure(self, μ_hat, Σ_hat, z):
