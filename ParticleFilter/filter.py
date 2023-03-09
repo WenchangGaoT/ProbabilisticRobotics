@@ -1,14 +1,43 @@
 import numpy as np
+import cv2
 from environment import Environment
+import matplotlib.pyplot as plt
 
 
-def simple_similarity(img1, img2):
+def L1_similarity(img1, img2):
+    # print(img1.dtype)
+    img1 = np.array(img1, dtype=np.float32)
+    img2 = np.array(img2, dtype=np.float32)
     diff = np.sum(np.abs(img1-img2))
+    # print(diff)
+    # diff = np.sum(img1-img2)
     return 1-diff/(np.sum(img1)+np.sum(img2))
+
+def L2_similarity(img1, img2):
+    img1, img2 = np.array(img1, dtype=np.float32), np.array(img2, dtype=np.float32)
+    diff = np.sum((img1-img2)**2, axis=-1)
+    diff = np.sqrt(diff)
+    return 1-np.sqrt(diff)/(np.sum(img1)+np.sum(img2))
+
+def Hist_similarity(img1, img2):
+    histRange = (0, 256)
+
+    b_hist1 = cv2.calcHist(img1, [0], None, [256], (0, 256), accumulate=False)
+    g_hist1 = cv2.calcHist(img1, [1], None, [256], histRange, accumulate=False)
+    r_hist1 = cv2.calcHist(img1, [2], None, [256], histRange, accumulate=False)
+
+    b_hist2 = cv2.calcHist(img2, [0], None, [256], (0, 256), accumulate=False)
+    g_hist2 = cv2.calcHist(img2, [1], None, [256], histRange, accumulate=False)
+    r_hist2 = cv2.calcHist(img2, [2], None, [256], histRange, accumulate=False)
+
+    diff = np.sum(np.abs(b_hist1-b_hist2))
+    plt.plot(b_hist1)
+    plt.show()
+
 
 class ParticleFilter:
 
-    def __init__(self, M, env, metric=simple_similarity):
+    def __init__(self, M, env, metric=L1_similarity):
         assert isinstance(env, Environment)
         self.M = M
         self.env = env
@@ -23,7 +52,8 @@ class ParticleFilter:
             self.particles.append((x, y))
 
     def resample(self, weights):
-       x = np.random.uniform(0, weights[-1])
+       x = np.random.uniform(0, weights[self.M-1])
+    #    print(weights[self.M-1])
        for i, wi in enumerate(weights):
            if x <= wi:
                return i 
@@ -44,8 +74,10 @@ class ParticleFilter:
 
             img = self.env.generate_ref(new_x, new_y)
             w = self.metric(z, img)
+            Hist_similarity(z, img)
+            # print(w)
             self.weights[m] = w
-            w = w if len(weights) == 0 else w+weights[-1]
+            w = w if m == 0 else w+weights[m-1]
             weights.append(w)
         
         for m in range(self.M):
@@ -53,13 +85,18 @@ class ParticleFilter:
 
 
 if __name__ == '__main__':
-    env = Environment()
+    env = Environment(m=40, map='./pics/CityMap.png')
     filter = ParticleFilter(1000, env)
-    T = 5000
+    T = 100
     for t in range(T):
         z = env.generate_observation()
+        cv2.imshow("obs", z)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
         env.render(filter.particles, filter.weights)
         u = env.generate_movement()
+
         env.step(u[0], u[1])
         filter.filter(u, z)
         
