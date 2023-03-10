@@ -37,12 +37,16 @@ class Environment:
             reference_img: ndarray of shape (m, m, 3)
         '''
         map_x, map_y = self.drone2map(self.drone_x, self.drone_y)
-        left_x, upper_y = max(int(map_x-0.5*self.m), 0), max(int(map_y-0.5*self.m), 0)
-        right_x, lower_y = min(int(left_x+self.m), self.map_width), min(int(upper_y+self.m), self.map_height)
-        if right_x-left_x < self.m: left_x = right_x-self.m
-        if lower_y-upper_y < self.m: upper_y = lower_y-self.m
+        map_x = int(map_x/self.m)
+        map_y = int(map_y/self.m)
+        left_x = map_x*self.m
+        upper_y = map_y*self.m
+        # left_x, upper_y = max(int(map_x-0.5*self.m), 0), max(int(map_y-0.5*self.m), 0)
+        # right_x, lower_y = min(int(left_x+self.m), self.map_width), min(int(upper_y+self.m), self.map_height)
+        # if right_x-left_x < self.m: left_x = right_x-self.m
+        # if lower_y-upper_y < self.m: upper_y = lower_y-self.m
 
-        ref_img = self.map[left_x:right_x, upper_y:lower_y, :]
+        ref_img = self.map[left_x:left_x+self.m, upper_y:upper_y+self.m, :]
 
         # print(left_x, right_x)
         # print(ref_img.shape)
@@ -54,12 +58,22 @@ class Environment:
     
     def generate_ref(self, x, y):
         map_x, map_y = self.drone2map(x, y)
-        left_x, upper_y = max(int(map_x-0.5*self.m), 0), max(int(map_y-0.5*self.m), 0)
-        right_x, lower_y = min(int(left_x+self.m), self.map_width), min(int(upper_y+self.m), self.map_height)
-        if right_x-left_x < self.m: left_x = right_x-self.m
-        if lower_y-upper_y < self.m: upper_y = lower_y-self.m
+        # left_x, upper_y = max(int(map_x-0.5*self.m), 0), max(int(map_y-0.5*self.m), 0)
+        # right_x, lower_y = min(int(left_x+self.m), self.map_width), min(int(upper_y+self.m), self.map_height)
+        # if right_x-left_x < self.m: left_x = right_x-self.m
+        # if lower_y-upper_y < self.m: upper_y = lower_y-self.m
 
-        ref_img = self.map[left_x:right_x, upper_y:lower_y, :]
+        # ref_img = self.map[left_x:right_x, upper_y:lower_y, :]
+        map_x = int(map_x/self.m)
+        map_y = int(map_y/self.m)
+        left_x = map_x*self.m
+        upper_y = map_y*self.m
+        # left_x, upper_y = max(int(map_x-0.5*self.m), 0), max(int(map_y-0.5*self.m), 0)
+        # right_x, lower_y = min(int(left_x+self.m), self.map_width), min(int(upper_y+self.m), self.map_height)
+        # if right_x-left_x < self.m: left_x = right_x-self.m
+        # if lower_y-upper_y < self.m: upper_y = lower_y-self.m
+
+        ref_img = self.map[left_x:left_x+self.m, upper_y:upper_y+self.m, :]
 
         return ref_img 
     
@@ -71,7 +85,7 @@ class Environment:
         returns:
             [dx, dy]T: ndarray of shape (2,)
         ''' 
-        dx = np.random.uniform(0, 1)
+        dx = np.random.uniform(-1, 1)
         dy = np.sqrt(1-dx**2)
         dy = dy if np.random.uniform(0, 1)>0.5 else -dy
         return np.array([dx, dy], dtype=np.float32)
@@ -99,7 +113,11 @@ class Environment:
         # print(np.sum(img != self.map))
         if save: cv2.imwrite('./BayMap_plots/'+fname, img)
         cv2.imshow("whole map", img)
-        cv2.waitKey(0)
+        k = cv2.waitKey(0)
+
+        if k == 's':
+            cv2.imwrite(fname, img)
+
         cv2.destroyAllWindows()
     
 

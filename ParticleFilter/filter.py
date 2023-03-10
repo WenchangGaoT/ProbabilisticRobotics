@@ -19,7 +19,7 @@ def L2_similarity(img1, img2):
     diff = np.sqrt(diff)
     return 1-np.sqrt(diff)/(np.sum(img1)+np.sum(img2))
 
-def Hist_similarity(img1, img2):
+def hist_similarity(img1, img2):
     histRange = (0, 256)
 
     b_hist1 = cv2.calcHist(img1, [0], None, [256], (0, 256), accumulate=False)
@@ -30,9 +30,12 @@ def Hist_similarity(img1, img2):
     g_hist2 = cv2.calcHist(img2, [1], None, [256], histRange, accumulate=False)
     r_hist2 = cv2.calcHist(img2, [2], None, [256], histRange, accumulate=False)
 
-    diff = np.sum(np.abs(b_hist1-b_hist2))
-    plt.plot(b_hist1)
-    plt.show()
+    diff = np.sum(np.abs(b_hist1-b_hist2))+np.sum(np.abs(g_hist1-g_hist2))+np.sum(np.abs(r_hist1-r_hist2))
+    return 1-diff/(np.sum(img1)+np.sum(img2))
+
+def weight_similarity(img1, img2):
+    return 0.3*L1_similarity(img1, img2)+0.7*hist_similarity(img1, img2)-0.8
+
 
 
 class ParticleFilter:
@@ -65,34 +68,36 @@ class ParticleFilter:
         for m in range(self.M):
             # Sampling new x
             new_x = self.particles[m][0]+u[0]+np.random.normal(0, σ)
-            new_x = max(-self.x_range, new_x)
-            new_x = min(self.x_range, new_x)
+            # new_x = max(-self.x_range, new_x)
+            # new_x = min(self.x_range, new_x)
             new_y = self.particles[m][1]+u[1]+np.random.normal(0, σ)
-            new_y = max(-self.y_range, new_y)
-            new_y = min(self.y_range, new_y)
+            # new_y = max(-self.y_range, new_y)
+            # new_y = min(self.y_range, new_y)
             new_particles.append((new_x, new_y))
 
             img = self.env.generate_ref(new_x, new_y)
             w = self.metric(z, img)
-            Hist_similarity(z, img)
+            # Hist_similarity(z, img)
             # print(w)
             self.weights[m] = w
             w = w if m == 0 else w+weights[m-1]
             weights.append(w)
-        
+
+        print(self.weights)
+
         for m in range(self.M):
             self.particles[m] = new_particles[self.resample(weights)]
 
 
 if __name__ == '__main__':
     env = Environment(m=40, map='./pics/CityMap.png')
-    filter = ParticleFilter(1000, env)
+    filter = ParticleFilter(1000, env, metric=weight_similarity)
     T = 100
     for t in range(T):
         z = env.generate_observation()
-        cv2.imshow("obs", z)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.imshow("obs", z)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
         env.render(filter.particles, filter.weights)
         u = env.generate_movement()
