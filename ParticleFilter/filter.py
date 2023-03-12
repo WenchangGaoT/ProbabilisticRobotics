@@ -104,8 +104,10 @@ class ParticleFilter:
 
 
 if __name__ == '__main__':
-    env = Environment(m=40, map='./pics/BayMap.png', sigma_movement=0.25)
+    env = Environment(m=40, map='./pics/MarioMap.png', sigma_movement=0.25)
     filter = ParticleFilter(2000, env, metric=correlation)
+    biases, vars = [], []
+    rates = []
     T = 20
     for t in range(T):
         z = env.generate_observation()
@@ -116,7 +118,18 @@ if __name__ == '__main__':
 
         env.render(filter.particles, filter.weights, fname=fname)
         u = env.generate_movement()
+        bias = env.compute_bias(filter.particles)
+        var = env.compute_variance(filter.particles)
+        biases.append(bias)
+        vars.append(var)
+        rates.append(env.correct_rate(filter.particles))
 
         env.step(u[0], u[1])
         filter.filter(u, z)
+    
+    # plt.plot(range(1, 21), biases, label='bias')
+    # plt.plot(range(1, 21), vars, label='variance')
+    plt.plot(range(1, 21), rates, label='CorrectRate')
+    plt.legend()
+    plt.show()
         

@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import math
 import os
+import matplotlib.pyplot as plt
 
 
 UNIT = 50
@@ -9,7 +10,7 @@ UNIT = 50
 
 class Environment:
 
-    def __init__(self, m=25, sigma_movement=1, map='./pics/BayMap.png', mode='random', is_accurate=True):
+    def __init__(self, m=25, sigma_movement=1, map='./pics/BayMap.png', mode='accurate', has_gps=True):
         self.map = cv2.imread(map)
         self.map = np.transpose(self.map, (1, 0, 2))
 
@@ -38,7 +39,7 @@ class Environment:
         self.drone_x = np.random.uniform(-self.x_range, self.x_range)
         self.drone_y = np.random.uniform(-self.y_range, self.y_range)
 
-        self.is_accurate = is_accurate
+        self.has_gps = has_gps
 
     def drone2map(self, x, y):
         return (math.trunc(x*UNIT+0.5*self.map_width), math.trunc(y*UNIT+0.5*self.map_height))
@@ -67,6 +68,8 @@ class Environment:
         upper_y = upper_y if lower_y-upper_y==self.m else lower_y-self.m
 
         ref_img = self.map[left_x:right_x, upper_y:lower_y, :]
+        if self.mode == 'blurry':
+            ref_img = cv2.GaussianBlur(ref_img, (3,3), 0)
 
         return ref_img
     
@@ -103,9 +106,13 @@ class Environment:
         returns:
             [dx, dy]T: ndarray of shape (2,)
         ''' 
-        dx = np.random.uniform(-1, 1)
-        dy = np.sqrt(1-dx**2)
-        dy = dy if np.random.uniform(0, 1)>0.5 else -dy
+        done = False
+        while not done:
+            dx = np.random.uniform(-1, 1)
+            dy = np.sqrt(1-dx**2)
+            dy = dy if np.random.uniform(0, 1)>0.5 else -dy
+            if self.drone_x+dx < self.x_range and self.drone_y+dy < self.y_range and self.drone_x+dx >= -self.x_range and self.drone_y >= -self.y_range:
+                done = True
         return np.array([dx, dy], dtype=np.float32)
     
     def step(self, dx, dy):
@@ -126,20 +133,48 @@ class Environment:
         for id, particle in enumerate(particles):
             x, y = self.drone2map(particle[0], particle[1])
             # print('circle x, y: ', x, y)
-            map = cv2.circle(map, (y, x), 2+math.floor(beliefs[id]*5), color=(0, 255, 0), thickness=-1)
+            map = cv2.circle(map, (y, x), 10+math.floor(beliefs[id]*10), color=(0, 0, 255), thickness=-1)
 
         x, y = self.drone2map(self.drone_x, self.drone_y)
-        map = cv2.circle(map, (y, x), 10, color=(0, 0, 0), thickness=-1)
+        map = cv2.circle(map, (y, x), 30, color=(0, 0, 0), thickness=-1)
 
         img = np.transpose(map, (1, 0, 2))
 
         cv2.imshow("whole map", img)
         k = cv2.waitKey(0)
-        print(k)
+        # print(k)
         if k == 115:
             cv2.imwrite(os.path.join(self.plot_dir, fname), img)
 
         cv2.destroyAllWindows()
+
+    def compute_bias(self, particles):
+        tot_error = 0.0
+        for particle in particles:
+            tot_error += abs(particle[0]-self.drone_x)
+            tot_error += abs(particle[1]-self.drone_y)
+        return tot_error/len(particles)
+    
+    def compute_variance(self, particles):
+        # mu_x, mu_y = 0., 0.
+        var = 0.
+        # for particle in particles:
+        #     mu_x += particle[0]
+        #     mu_y += particle[1]
+        
+        # mu_x, mu_y = mu_x/len(particles), mu_y/len(particles)
+        for particle in particles:
+            var += (particle[0]-self.drone_x)**2+(particle[1]-self.drone_y)**2/(len(particles))
+        var = math.sqrt(var)
+        return var 
+    
+    def correct_rate(self, particles):
+        num = 0
+        for particle in particles:
+            if abs(particle[0] - self.drone_x) < 2 and abs(particle[1] - self.drone_y) < 2:
+                num += 1
+
+        return num/len(particles)
     
 
 if __name__ == '__main__':
